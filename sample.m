@@ -23,7 +23,7 @@
 
 % An implementation of direct collocation
 % Joel Andersson, 2016
-
+addpath('casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
 
 % Degree of interpolating polynomial
@@ -71,11 +71,12 @@ T = 10;
 % Declare model variables
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
-x = [x1; x2];
+x3 = SX.sym('x3');
+x = [x1; x2; x3];
 u = SX.sym('u');
 
 % Model equations
-xdot = [(1-x2^2)*x1 - x2 + u; x1];
+xdot = [cos(x3); sin(x3); u];
 
 % Objective term
 L = x1^2 + x2^2 + u^2;
@@ -84,7 +85,7 @@ L = x1^2 + x2^2 + u^2;
 f = Function('f', {x, u}, {xdot, L});
 
 % Control discretization
-N = 20; % number of control intervals
+N = 3; % number of control intervals
 h = T/N;
 
 % Start with an empty NLP
