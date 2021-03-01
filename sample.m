@@ -23,6 +23,7 @@
 
 % An implementation of direct collocation
 % Joel Andersson, 2016
+clear;clc
 addpath('casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
 
@@ -80,6 +81,7 @@ xdot = [cos(x3); sin(x3); u];
 
 % Objective term
 L = x1^2 + x2^2 + u^2;
+%L = ((1-x2^2)*x1 - x2+u)^2 + x1^2;
 
 % Continuous time dynamics
 f = Function('f', {x, u}, {xdot, L});
@@ -99,11 +101,11 @@ lbg = [];
 ubg = [];
 
 % "Lift" initial conditions
-Xk = MX.sym('X0', 2);
+Xk = MX.sym('X0', 3);
 w = {w{:}, Xk};
-lbw = [lbw; 0; 1];
-ubw = [ubw; 0; 1];
-w0 = [w0; 0; 1];
+lbw = [lbw; 1; 1; 0];
+ubw = [ubw; 1; 1; 0];
+w0 = [w0; 1; 1; 0];
 
 % Formulate the NLP
 for k=0:N-1
@@ -117,11 +119,11 @@ for k=0:N-1
     % State at collocation points
     Xkj = {};
     for j=1:d
-        Xkj{j} = MX.sym(['X_' num2str(k) '_' num2str(j)], 2);
+        Xkj{j} = MX.sym(['X_' num2str(k) '_' num2str(j)], 3);
         w = {w{:}, Xkj{j}};
-        lbw = [lbw; -0.25; -inf];
-        ubw = [ubw;  inf;  inf];
-        w0 = [w0; 0; 0];
+        lbw = [lbw; -0.25; -0.25; -inf];
+        ubw = [ubw;  inf; inf;  inf];
+        w0 = [w0; 0; 0; 0];
     end
 
     % Loop over collocation points
@@ -136,8 +138,8 @@ for k=0:N-1
        % Append collocation equations
        [fj, qj] = f(Xkj{j},Uk);
        g = {g{:}, h*fj - xp};
-       lbg = [lbg; 0; 0];
-       ubg = [ubg; 0; 0];
+       lbg = [lbg; 0; 0; 0];
+       ubg = [ubg; 0; 0; 0];
 
        % Add contribution to the end state
        Xk_end = Xk_end + D(j+1)*Xkj{j};
@@ -147,16 +149,16 @@ for k=0:N-1
     end
 
     % New NLP variable for state at end of interval
-    Xk = MX.sym(['X_' num2str(k+1)], 2);
+    Xk = MX.sym(['X_' num2str(k+1)], 3);
     w = {w{:}, Xk};
-    lbw = [lbw; -0.25; -inf];
-    ubw = [ubw;  inf;  inf];
-    w0 = [w0; 0; 0];
+    lbw = [lbw; -0.25; -inf; -inf];
+    ubw = [ubw;  inf; inf;  inf];
+    w0 = [w0; 0; 0; 0];
 
     % Add equality constraint
     g = {g{:}, Xk_end-Xk};
-    lbg = [lbg; 0; 0];
-    ubg = [ubg; 0; 0];
+    lbg = [lbg; 0; 0; 0];
+    ubg = [ubg; 0; 0; 0];
 end
 
 % Create an NLP solver
@@ -169,14 +171,16 @@ sol = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,...
 w_opt = full(sol.x);
 
 % Plot the solution
-x1_opt = w_opt(1:3+2*d:end);
-x2_opt = w_opt(2:3+2*d:end);
-u_opt = w_opt(3:3+2*d:end);
+x1_opt = w_opt(1:4+3*d:end);
+x2_opt = w_opt(2:4+3*d:end);
+x3_opt = w_opt(3:4+3*d:end);
+u_opt = w_opt(4:4+3*d:end);
 tgrid = linspace(0, T, N+1);
 clf;
 hold on
 plot(tgrid, x1_opt, '--')
 plot(tgrid, x2_opt, '-')
+plot(tgrid, x3_opt, '-*')
 stairs(tgrid, [u_opt; nan], '-.')
 xlabel('t')
-legend('x1','x2','u')
+legend('x1','x2','x3','u')
