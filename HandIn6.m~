@@ -6,13 +6,10 @@ clc;clear;
 % motion equations.
 
 %Initial and final states
-state_i = [0;0;0];
-state_f = [2;3;pi];
-
-% state_i = [0 0 pi/2]';
-% state_f = [-2.3 1.7 pi]';
-
-
+% state_i = [0;0;0];
+% state_f = [2;3;pi];
+state_i = [0 0 pi/2]';
+state_f = [-2.3 1.7 pi]';
 % startPoseRLR = [0 0 pi/2];
 % goalPoseRLR = [2.3 1.7 pi];
 % startPoseRSL = [2 0 pi];
@@ -43,7 +40,7 @@ opti = casadi.Opti();
 % Define optimization variables and motion equations
 x = MX.sym('x',nx);
 u = MX.sym('u');
-f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), u});
+f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), tan(u)});
 X = opti.variable(nx,N+1);
 pos_x = X(1,:);
 pos_y = X(2,:);
@@ -110,8 +107,3 @@ subplot(1,2,2)
 plot(pos_x_opt,pos_y_opt)
 xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
 yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0)
-
-%Check solution
-if(abs(pathCosts - T_opt))< 0.01
-    fprintf("Both implementations show same results\n")
-end
