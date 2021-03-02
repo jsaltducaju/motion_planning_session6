@@ -1,3 +1,5 @@
+addpath('../casadi-osx-matlabR2015a-v3.5.5')
+
 % Compute the motion primitives using optimization with the tool CasADi
 % using direct collocation for discretization of the continuous-time
 % motion equations.
@@ -5,10 +7,14 @@
 N = 75; % Number of elements
 nx = 3; % Degree of state vector
 Nc = 3; % Degree of interpolation polynomials
-x_vec = lattice(1, :);
-y_vec = lattice(2, :);
-th_vec = lattice(3, :);
-
+x_vec = 2;
+y_vec = 2;
+th_vec = -pi;
+v = 1;
+L = 1;
+u_max = 1;
+u_min = -1;
+state_i = [0;0;0];
 % Formulate the optimization problem for minimum path length using CasADi
 import casadi.*
 for i = 1:length(x_vec)
@@ -19,7 +25,7 @@ for i = 1:length(x_vec)
  % Define optimization variables and motion equations
  x = MX.sym('x',nx);
  u = MX.sym('u');
- f = Function('f',{x, u}, {v*cos(x(3)), v*sin(x(3)), v*tan(u)/L});
+ f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), tan(u)});
  X = opti.variable(nx,N+1);
  pos_x = X(1,:);
  pos_y = X(2,:);
@@ -59,7 +65,7 @@ for i = 1:length(x_vec)
  opti.subject_to(X(:,end) == state_f);
  % Formulate the cost function
  alpha = 1e-2;
- opti.minimize(T + alpha*sumsqr(U));
+ opti.minimize(T);
  % Choose solver ipopt and solve the problem
  opti.solver('ipopt',struct('expand',true),struct('tol',1e-8));
  sol = opti.solve();
