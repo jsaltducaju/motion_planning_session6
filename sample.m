@@ -1,186 +1,78 @@
-%
-%     This file is part of CasADi.
-%
-%     CasADi -- A symbolic framework for dynamic optimization.
-%     Copyright (C) 2010-2014 Joel Andersson, Joris Gillis, Moritz Diehl,
-%                             K.U. Leuven. All rights reserved.
-%     Copyright (C) 2011-2014 Greg Horn
-%
-%     CasADi is free software; you can redistribute it and/or
-%     modify it under the terms of the GNU Lesser General Public
-%     License as published by the Free Software Foundation; either
-%     version 3 of the License, or (at your option) any later version.
-%
-%     CasADi is distributed in the hope that it will be useful,
-%     but WITHOUT ANY WARRANTY; without even the implied warranty of
-%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-%     Lesser General Public License for more details.
-%
-%     You should have received a copy of the GNU Lesser General Public
-%     License along with CasADi; if not, write to the Free Software
-%     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-%
+% Compute the motion primitives using optimization with the tool CasADi
+% using direct collocation for discretization of the continuous-time
+% motion equations.
+% Parameters for collocation
+N = 75; % Number of elements
+nx = 3; % Degree of state vector
+Nc = 3; % Degree of interpolation polynomials
+x_vec = lattice(1, :);
+y_vec = lattice(2, :);
+th_vec = lattice(3, :);
 
-% An implementation of direct collocation
-% Joel Andersson, 2016
-clear;clc
-addpath('casadi-osx-matlabR2015a-v3.5.5')
+% Formulate the optimization problem for minimum path length using CasADi
 import casadi.*
+for i = 1:length(x_vec)
 
-% Degree of interpolating polynomial
-d = 3;
+ % Use the opti interface in CasADi
+ opti = casadi.Opti();
+ state_f = [x_vec(i) y_vec(i) th_vec(i)]';
+ % Define optimization variables and motion equations
+ x = MX.sym('x',nx);
+ u = MX.sym('u');
+ f = Function('f',{x, u}, {v*cos(x(3)), v*sin(x(3)), v*tan(u)/L});
+ X = opti.variable(nx,N+1);
+ pos_x = X(1,:);
+ pos_y = X(2,:);
+ ang_th = X(3,:);
+ U = opti.variable(N,1);
+ T = opti.variable(1);
+ % Set the element length (with final time T unknown, and thus an
+ % optimization variable)
+ dt = T/N;
+ % Set initial guess values of variables
+ opti.set_initial(T,0.1);
+ opti.set_initial(U,0.0*ones(N,1));
 
-% Get collocation points
-tau_root = [0 collocation_points(d, 'legendre')];
-
-% Coefficients of the collocation equation
-C = zeros(d+1,d+1);
-
-% Coefficients of the continuity equation
-D = zeros(d+1, 1);
-
-% Coefficients of the quadrature function
-B = zeros(d+1, 1);
-
-% Construct polynomial basis
-for j=1:d+1
-  % Construct Lagrange polynomials to get the polynomial basis at the collocation point
-  coeff = 1;
-  for r=1:d+1
-    if r ~= j
-      coeff = conv(coeff, [1, -tau_root(r)]);
-      coeff = coeff / (tau_root(j)-tau_root(r));
-    end
-  end
-  % Evaluate the polynomial at the final time to get the coefficients of the continuity equation
-  D(j) = polyval(coeff, 1.0);
-
-  % Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the continuity equation
-  pder = polyder(coeff);
-  for r=1:d+1
-    C(j,r) = polyval(pder, tau_root(r));
-  end
-
-  % Evaluate the integral of the polynomial to get the coefficients of the quadrature function
-  pint = polyint(coeff);
-  B(j) = polyval(pint, 1.0);
-end
-
-% Time horizon
-T = 10;
-
-% Declare model variables
-x1 = SX.sym('x1');
-x2 = SX.sym('x2');
-x3 = SX.sym('x3');
-x = [x1; x2; x3];
-u = SX.sym('u');
-
-% Model equations
-xdot = [cos(x3); sin(x3); u];
-
-% Objective term
-L = x1^2 + x2^2 + u^2;
-%L = ((1-x2^2)*x1 - x2+u)^2 + x1^2;
-
-% Continuous time dynamics
-f = Function('f', {x, u}, {xdot, L});
-
-% Control discretization
-N = 3; % number of control intervals
-h = T/N;
-
-% Start with an empty NLP
-w={};
-w0 = [];
-lbw = [];
-ubw = [];
-J = 0;
-g={};
-lbg = [];
-ubg = [];
-
-% "Lift" initial conditions
-Xk = MX.sym('X0', 3);
-w = {w{:}, Xk};
-lbw = [lbw; 1; 1; 0];
-ubw = [ubw; 1; 1; 0];
-w0 = [w0; 1; 1; 0];
-
-% Formulate the NLP
-for k=0:N-1
-    % New NLP variable for the control
-    Uk = MX.sym(['U_' num2str(k)]);
-    w = {w{:}, Uk};
-    lbw = [lbw; -1];
-    ubw = [ubw;  1];
-    w0 = [w0;  0];
-
-    % State at collocation points
-    Xkj = {};
-    for j=1:d
-        Xkj{j} = MX.sym(['X_' num2str(k) '_' num2str(j)], 3);
-        w = {w{:}, Xkj{j}};
-        lbw = [lbw; -0.25; -0.25; -inf];
-        ubw = [ubw;  inf; inf;  inf];
-        w0 = [w0; 0; 0; 0];
-    end
-
-    % Loop over collocation points
-    Xk_end = D(1)*Xk;
-    for j=1:d
-       % Expression for the state derivative at the collocation point
-       xp = C(1,j+1)*Xk;
-       for r=1:d
-           xp = xp + C(r+1,j+1)*Xkj{r};
-       end
-
-       % Append collocation equations
-       [fj, qj] = f(Xkj{j},Uk);
-       g = {g{:}, h*fj - xp};
-       lbg = [lbg; 0; 0; 0];
-       ubg = [ubg; 0; 0; 0];
-
-       % Add contribution to the end state
-       Xk_end = Xk_end + D(j+1)*Xkj{j};
-
-       % Add contribution to quadrature function
-       J = J + B(j+1)*qj*h;
-    end
-
-    % New NLP variable for state at end of interval
-    Xk = MX.sym(['X_' num2str(k+1)], 3);
-    w = {w{:}, Xk};
-    lbw = [lbw; -0.25; -inf; -inf];
-    ubw = [ubw;  inf; inf;  inf];
-    w0 = [w0; 0; 0; 0];
-
-    % Add equality constraint
-    g = {g{:}, Xk_end-Xk};
-    lbg = [lbg; 0; 0; 0];
-    ubg = [ubg; 0; 0; 0];
-end
-
-% Create an NLP solver
-prob = struct('f', J, 'x', vertcat(w{:}), 'g', vertcat(g{:}));
-solver = nlpsol('solver', 'ipopt', prob);
-
-% Solve the NLP
-sol = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,...
-            'lbg', lbg, 'ubg', ubg);
-w_opt = full(sol.x);
-
-% Plot the solution
-x1_opt = w_opt(1:4+3*d:end);
-x2_opt = w_opt(2:4+3*d:end);
-x3_opt = w_opt(3:4+3*d:end);
-u_opt = w_opt(4:4+3*d:end);
-tgrid = linspace(0, T, N+1);
-clf;
-hold on
-plot(tgrid, x1_opt, '--')
-plot(tgrid, x2_opt, '-')
-plot(tgrid, x3_opt, '-*')
-stairs(tgrid, [u_opt; nan], '-.')
-xlabel('t')
-legend('x1','x2','x3','u')
+ % Define collocation parameters
+ tau = collocation_points(Nc,'radau');
+ [C,~] = collocation_interpolators(tau);
+ % Formulate collocation constraints
+ for k = 1:N % Loop over elements
+ Xc = opti.variable(nx,Nc);
+ X_kc = [X(:,k) Xc];
+ for j = 1:Nc
+ % Make sure that the motion equations are satisfied at
+ % all collocation points
+ [f_1, f_2, f_3] = f(Xc(:,j),U(k));
+ opti.subject_to(X_kc*C{j+1}' == dt*[f_1; f_2; f_3]);
+ end
+ % Continuity constraints for states between elements
+ opti.subject_to(X_kc(:,Nc+1) == X(:,k+1));
+ end
+ % Input constraints
+ for k = 1:N
+ opti.subject_to(-u_max <= U(k) <= u_max);
+ end
+ % Initial and terminal constraints
+ opti.subject_to(T >= 0.001);
+ opti.subject_to(X(:,1) == state_i);
+ opti.subject_to(X(:,end) == state_f);
+ % Formulate the cost function
+ alpha = 1e-2;
+ opti.minimize(T + alpha*sumsqr(U));
+ % Choose solver ipopt and solve the problem
+ opti.solver('ipopt',struct('expand',true),struct('tol',1e-8));
+ sol = opti.solve();
+ % Extract solution trajectories and store them in mprim variable
+ pos_x_opt = sol.value(pos_x);
+ pos_y_opt = sol.value(pos_y);
+ ang_th_opt = sol.value(ang_th);
+ u_opt = sol.value(U);
+ T_opt = sol.value(T);
+ mprim{i}.x = pos_x_opt;
+ mprim{i}.y = pos_y_opt;
+ mprim{i}.th = ang_th_opt;
+ mprim{i}.u = u_opt;
+ mprim{i}.T = T_opt;
+ mprim{i}.ds = T_opt*v;
+ end
