@@ -6,22 +6,29 @@ clc;clear;
 % motion equations.
 
 %Initial and final states
-% state_i = [0;0;0];
+% state_i = [0;0;0]; %test
 % state_f = [2;3;pi];
-state_i = [0 0 pi/2]';
-state_f = [-2.3 1.7 pi]';
-% startPoseRLR = [0 0 pi/2];
-% goalPoseRLR = [2.3 1.7 pi];
-% startPoseRSL = [2 0 pi];
-% goalPoseRSL = [1 0.2 pi/2];
-% startPoseLSL = [2 -1 pi/4];
-% goalPoseLSL = [2 1.2 0];
-% startPoseLSR = [0 -1 pi/4];
-% goalPoseLSR = [2 1.2 0];
-% startPoseRSR = [0 0 pi/4];
-% goalPoseRSR = [2 1.2 0];
-% startPoseLRL = [0 0 pi/4];
-% goalPoseLRL = [1.2 1.7 -pi/2];
+
+% state_i = [0 0 pi/2]'; %LRL
+% state_f = [-2.3 1.7 pi]';
+
+% state_i = [0 0 pi/2]'; %RLR
+% state_f = [2.3 1.7 pi]';
+
+% state_i = [2 0 pi]'; %RSL
+% state_f = [1 0.2 pi/2]';
+
+% state_i = [2 -1 pi/4]'; %LSL
+% state_f = [2 1.2 0]';
+
+% state_i = [0 -1 pi/4]'; %LSR
+% state_f = [2 1.2 0]';
+
+% state_i = [0 0 pi/4]'; %RSR
+% state_f = [2 1.2 0]';
+
+% state_i = [0 0 pi/4]'; %LRL
+% state_f = [1.2 1.7 -pi/2]';
 %Input constraint
 u_max = 1; %u_min = -u_max
 
@@ -40,7 +47,7 @@ opti = casadi.Opti();
 % Define optimization variables and motion equations
 x = MX.sym('x',nx);
 u = MX.sym('u');
-f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), tan(u)});
+f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), u});
 X = opti.variable(nx,N+1);
 pos_x = X(1,:);
 pos_y = X(2,:);
@@ -96,14 +103,19 @@ ds = T_opt; %ds = T*v (v=1)
 dubConnObj = dubinsConnection;
 [pathSegObj, pathCosts] = connect(dubConnObj,state_i',state_f');
 
-%Plots
-figure(1)
+% Plots
+figure()
 subplot(1,2,1)
 show(pathSegObj{1});
 xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
 yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0) 
 
 subplot(1,2,2)
-plot(pos_x_opt,pos_y_opt)
+plot(pos_x_opt,pos_y_opt, 'LineWidth',2)
 xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
 yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0)
+
+%Check solution
+if(abs(pathCosts - T_opt))< 0.01
+    fprintf("Both implementations show same results\n")
+end
