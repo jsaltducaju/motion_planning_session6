@@ -1,6 +1,6 @@
-addpath('../casadi-osx-matlabR2015a-v3.5.5')
+addpath('casadi-osx-matlabR2015a-v3.5.5')
 
-% Compute the motion primitives using optimization with the tool CasADi
+% Compute Dubins curves using optimization with the tool CasADi
 % using direct collocation for discretization of the continuous-time
 % motion equations.
 % Parameters for collocation
@@ -81,4 +81,6 @@ for i = 1:length(x_vec)
  mprim{i}.u = u_opt;
  mprim{i}.T = T_opt;
  mprim{i}.ds = T_opt*v;
- end
+end
+ 
+ plot(pos_x_opt,pos_y_opt)
