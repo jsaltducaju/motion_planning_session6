@@ -1,103 +1,96 @@
-addpath('casadi-osx-matlabR2015a-v3.5.5')
+clc;clear;
+
 
 % Compute Dubins curves using optimization with the tool CasADi
 % using direct collocation for discretization of the continuous-time
 % motion equations.
-% Parameters for collocation
 
+%Initial and final states
+state_i = [0;0;0];
+state_f = [2;3;pi];
+
+%Input constraint
+u_max = 1; %u_min = -u_max
+
+% Parameters for collocation
 N = 75; % Number of elements
 nx = 3; % Degree of state vector
 Nc = 3; % Degree of interpolation polynomials
-x_vec = 2;
-y_vec = 3;
-th_vec = pi;
-v = 1;
-L = 1;
-u_max = 1;
-state_i = [0;0;0];
+
 % Formulate the optimization problem for minimum path length using CasADi
+addpath('casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
-for i = 1:length(x_vec)
 
- % Use the opti interface in CasADi
- opti = casadi.Opti();
- state_f = [x_vec(i) y_vec(i) th_vec(i)]';
- % Define optimization variables and motion equations
- x = MX.sym('x',nx);
- u = MX.sym('u');
- f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), tan(u)});
- X = opti.variable(nx,N+1);
- pos_x = X(1,:);
- pos_y = X(2,:);
- ang_th = X(3,:);
- U = opti.variable(N,1);
- T = opti.variable(1);
- % Set the element length (with final time T unknown, and thus an
- % optimization variable)
- dt = T/N;
- % Set initial guess values of variables
- opti.set_initial(T,0.1);
- opti.set_initial(U,0.0*ones(N,1));
+% Use the opti interface in CasADi
+opti = casadi.Opti();
 
- % Define collocation parameters
- tau = collocation_points(Nc,'radau');
- [C,~] = collocation_interpolators(tau);
- % Formulate collocation constraints
- for k = 1:N % Loop over elements
- Xc = opti.variable(nx,Nc);
- X_kc = [X(:,k) Xc];
- for j = 1:Nc
- % Make sure that the motion equations are satisfied at
- % all collocation points
- [f_1, f_2, f_3] = f(Xc(:,j),U(k));
- opti.subject_to(X_kc*C{j+1}' == dt*[f_1; f_2; f_3]);
- end
- % Continuity constraints for states between elements
- opti.subject_to(X_kc(:,Nc+1) == X(:,k+1));
- end
- % Input constraints
- for k = 1:N
- opti.subject_to(-u_max <= U(k) <= u_max);
- end
- % Initial and terminal constraints
- opti.subject_to(T >= 0.001);
- opti.subject_to(X(:,1) == state_i);
- opti.subject_to(X(:,end) == state_f);
- % Formulate the cost function
- alpha = 1e-2;
- opti.minimize(T);
- % Choose solver ipopt and solve the problem
- opti.solver('ipopt',struct('expand',true),struct('tol',1e-8));
- sol = opti.solve();
- % Extract solution trajectories and store them in mprim variable
- pos_x_opt = sol.value(pos_x);
- pos_y_opt = sol.value(pos_y);
- ang_th_opt = sol.value(ang_th);
- u_opt = sol.value(U);
- T_opt = sol.value(T);
- mprim{i}.x = pos_x_opt;
- mprim{i}.y = pos_y_opt;
- mprim{i}.th = ang_th_opt;
- mprim{i}.u = u_opt;
- mprim{i}.T = T_opt;
- mprim{i}.ds = T_opt*v;
+% Define optimization variables and motion equations
+x = MX.sym('x',nx);
+u = MX.sym('u');
+f = Function('f',{x, u}, {cos(x(3)), sin(x(3)), tan(u)});
+X = opti.variable(nx,N+1);
+pos_x = X(1,:);
+pos_y = X(2,:);
+ang_th = X(3,:);
+U = opti.variable(N,1);
+T = opti.variable(1);
+% Set the element length (with final time T unknown, and thus an
+% optimization variable)
+dt = T/N;
+% Set initial guess values of variables
+opti.set_initial(T,0.1);
+opti.set_initial(U,0.0*ones(N,1));
+
+% Define collocation parameters
+tau = collocation_points(Nc,'radau');
+[C,~] = collocation_interpolators(tau);
+% Formulate collocation constraints
+for k = 1:N % Loop over elements
+    Xc = opti.variable(nx,Nc);
+    X_kc = [X(:,k) Xc];
+    for j = 1:Nc
+        % Make sure that the motion equations are satisfied at
+        % all collocation points
+        [f_1, f_2, f_3] = f(Xc(:,j),U(k));
+        opti.subject_to(X_kc*C{j+1}' == dt*[f_1; f_2; f_3]);
+    end
+    % Continuity constraints for states between elements
+    opti.subject_to(X_kc(:,Nc+1) == X(:,k+1));
 end
- 
-
+% Input constraints
+for k = 1:N
+    opti.subject_to(-u_max <= U(k) <= u_max);
+end
+% Initial and terminal constraints
+opti.subject_to(T >= 0.001);
+opti.subject_to(X(:,1) == state_i);
+opti.subject_to(X(:,end) == state_f);
+% Formulate the cost function
+alpha = 1e-2;
+opti.minimize(T);
+% Choose solver ipopt and solve the problem
+opti.solver('ipopt',struct('expand',true),struct('tol',1e-8));
+sol = opti.solve();
+% Extract solution trajectories and store them in mprim variable
+pos_x_opt = sol.value(pos_x);
+pos_y_opt = sol.value(pos_y);
+ang_th_opt = sol.value(ang_th);
+u_opt = sol.value(U);
+T_opt = sol.value(T);
+ds = T_opt; %ds = T*v (v=1)
  
 %Matlab Dubins 
-startPose = state_i';
-goalPose = state_f';
 dubConnObj = dubinsConnection;
-[pathSegObj, pathCosts] = connect(dubConnObj,startPose,goalPose);
+[pathSegObj, pathCosts] = connect(dubConnObj,state_i',state_f');
+
+%Plots
 figure(1)
 subplot(1,2,1)
 show(pathSegObj{1});
-xaxis(min(startPose(1),goalPose(1))-2.0, max(startPose(1),goalPose(1))+2.0) 
-yaxis(min(startPose(2),goalPose(2))-2.0, max(startPose(2),goalPose(2))+2.0) 
+xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
+yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0) 
 
-%Plots
 subplot(1,2,2)
 plot(pos_x_opt,pos_y_opt)
-xaxis(min(startPose(1),goalPose(1))-2.0, max(startPose(1),goalPose(1))+2.0) 
-yaxis(min(startPose(2),goalPose(2))-2.0, max(startPose(2),goalPose(2))+2.0)
+xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
+yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0)
