@@ -4,16 +4,16 @@ addpath('casadi-osx-matlabR2015a-v3.5.5')
 % using direct collocation for discretization of the continuous-time
 % motion equations.
 % Parameters for collocation
+
 N = 75; % Number of elements
 nx = 3; % Degree of state vector
 Nc = 3; % Degree of interpolation polynomials
 x_vec = 2;
-y_vec = 2;
-th_vec = -pi;
+y_vec = 3;
+th_vec = pi;
 v = 1;
 L = 1;
 u_max = 1;
-u_min = -1;
 state_i = [0;0;0];
 % Formulate the optimization problem for minimum path length using CasADi
 import casadi.*
@@ -83,4 +83,21 @@ for i = 1:length(x_vec)
  mprim{i}.ds = T_opt*v;
 end
  
- plot(pos_x_opt,pos_y_opt)
+
+ 
+%Matlab Dubins 
+startPose = state_i';
+goalPose = state_f';
+dubConnObj = dubinsConnection;
+[pathSegObj, pathCosts] = connect(dubConnObj,startPose,goalPose);
+figure(1)
+subplot(1,2,1)
+show(pathSegObj{1});
+xaxis(min(startPose(1),goalPose(1))-2.0, max(startPose(1),goalPose(1))+2.0) 
+yaxis(min(startPose(2),goalPose(2))-2.0, max(startPose(2),goalPose(2))+2.0) 
+
+%Plots
+subplot(1,2,2)
+plot(pos_x_opt,pos_y_opt)
+xaxis(min(startPose(1),goalPose(1))-2.0, max(startPose(1),goalPose(1))+2.0) 
+yaxis(min(startPose(2),goalPose(2))-2.0, max(startPose(2),goalPose(2))+2.0)
