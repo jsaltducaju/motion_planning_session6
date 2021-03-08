@@ -1,34 +1,8 @@
-clc;clear;
-
-
+function [out] = Handin_function(state_i, state_f)
 % Compute Dubins curves using optimization with the tool CasADi
 % using direct collocation for discretization of the continuous-time
-% motion equations.
+% motion equations. - Function version for testing
 
-%Initial and final states
-% state_i = [0;0;0]; %test
-% state_f = [2;3;pi];
-
-% state_i = [0 0 pi/2]'; %LRL
-% state_f = [-2.3 1.7 pi]';
-
-% state_i = [0 0 pi/2]'; %RLR
-% state_f = [2.3 1.7 pi]';
-
-% state_i = [2 0 pi]'; %RSL
-% state_f = [1 0.2 pi/2]';
-
-% state_i = [2 -1 pi/4]'; %LSL
-% state_f = [2 1.2 0]';
-
-% state_i = [0 -1 pi/4]'; %LSR
-% state_f = [2 1.2 0]';
-
-% state_i = [0 0 pi/4]'; %RSR
-% state_f = [2 1.2 0]';
-
-% state_i = [0 0 pi/4]'; %LRL
-% state_f = [1.2 1.7 -pi/2]';
 %Input constraint
 u_max = 1; %u_min = -u_max
 
@@ -38,7 +12,7 @@ nx = 3; % Degree of state vector
 Nc = 3; % Degree of interpolation polynomials
 
 % Formulate the optimization problem for minimum path length using CasADi
-addpath('casadi-osx-matlabR2015a-v3.5.5')
+addpath('../casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
 
 % Use the opti interface in CasADi
@@ -103,19 +77,8 @@ ds = T_opt; %ds = T*v (v=1)
 dubConnObj = dubinsConnection;
 [pathSegObj, pathCosts] = connect(dubConnObj,state_i',state_f');
 
-% Plots
-figure()
-subplot(1,2,1)
-show(pathSegObj{1});
-xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
-yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0) 
-
-subplot(1,2,2)
-plot(pos_x_opt,pos_y_opt, 'LineWidth',2)
-xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
-yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0)
 
 %Check solution
-if(abs(pathCosts - T_opt))< 0.01
-    fprintf("Both implementations show same results\n")
+out = abs(pathCosts - T_opt);
+
 end
