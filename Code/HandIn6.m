@@ -41,6 +41,15 @@ end
 if b(1) ~= 3 || b(2) ~= 1
    error('HandIn6:InputSize','state_f must be a matrix of size 3x1')
 end
+
+%Check input variable type
+if ~isa(state_i(1),'numeric') || ~isa(state_i(2),'numeric') || ~isa(state_i(3),'numeric')
+    error('HandIn6:InputVariableType','state_i elements must be numbers.')
+end
+if ~isa(state_f(1),'numeric') || ~isa(state_f(2),'numeric') || ~isa(state_f(3),'numeric')
+    error('HandIn6:InputVariableType','state_f elements must be numbers.')
+end
+
 % Parameters for collocation
 N = 75; % Number of elements
 nx = 3; % Degree of state vector
