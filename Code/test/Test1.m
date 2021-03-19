@@ -24,11 +24,20 @@ classdef Test1 < matlab.unittest.TestCase
         end 
         function testInputSize(testCase)
             state_i = 1;
-            state_f = [2 3 pi];
+            state_f = [2 3 pi]';
             testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputSize')
-            state_i = [0 0 0];
+            state_i = [0 0 0]';
             state_f = 1;
             testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputSize')      
+        end
+        function testVariableType(testCase)
+            state_i = [0 '0' 0]';
+            state_f = [2 3 pi]';
+            testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputVariableType')
+            state_i = [0 0 0]';
+            syms f1 f2 f3
+            state_f = [f1 f2 f3]';
+            testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputVariableType')      
         end
     end
 end
