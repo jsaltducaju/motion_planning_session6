@@ -3,6 +3,16 @@ function [out] = Handin_function(state_i, state_f)
 % using direct collocation for discretization of the continuous-time
 % motion equations. - Function version for testing
 
+%Check input size
+a = size(state_i);
+b = size(state_f);
+if a(1) ~= 3 || a(2) ~= 1
+   error('HandIn6:InputSize','state_i must be a matrix of size 3x1')
+end
+if b(1) ~= 3 || b(2) ~= 1
+   error('HandIn6:InputSize','state_f must be a matrix of size 3x1')
+end
+
 %Input constraint
 u_max = 1; %u_min = -u_max
 
