@@ -22,6 +22,14 @@ classdef Test1 < matlab.unittest.TestCase
                 testCase.verifyEqual(actSol,expSol, 'AbsTol',0.01);
             end
         end 
+        function testInputSize(testCase)
+            state_i = 1;
+            state_f = [2 3 pi];
+            testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputSize')
+            state_i = [0 0 0];
+            state_f = 1;
+            testCase.verifyError(@()HandIn6_function(state_i, state_f),'HandIn6:InputSize')      
+        end
     end
 end
 
