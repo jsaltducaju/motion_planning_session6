@@ -26,17 +26,21 @@ clc;clear;
 
 % state_i = [0 0 pi/4]'; %RSR
 % state_f = [2 1.2 0]';
-state_i = 1
+state_i = 1;
 %state_i = [0 0 pi/4]'; %LRL
 state_f = [1.2 1.7 -pi/2]';
 %Input constraint
 u_max = 1; %u_min = -u_max
 
-%Check input type
-a = size(state_b);
+%Check input size
+a = size(state_i);
 b = size(state_f);
-if ~ischar(n)
-   error('Error. \nInput must be a char, not a %s.',class(n))
+if a(1) ~= 3 || a(2) ~= 1
+   error('Error: state_i must be a matrix of size 3x1')
+   error('add5:InputMustBeNumeric','Input must be numeric.')
+end
+if b(1) ~= 3 || b(2) ~= 1
+   error('Error: state_f must be a matrix of size 3x1')
 end
 % Parameters for collocation
 N = 75; % Number of elements

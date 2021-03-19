@@ -36,10 +36,10 @@ u_max = 1; %u_min = -u_max
 a = size(state_i);
 b = size(state_f);
 if a(1) ~= 3 || a(2) ~= 1
-   error('Error: state_i must be a matrix of size 3x1')
+   error('HandIn6:InputSize','state_i must be a matrix of size 3x1')
 end
 if b(1) ~= 3 || b(2) ~= 1
-   error('Error: state_f must be a matrix of size 3x1')
+   error('HandIn6:InputSize','state_f must be a matrix of size 3x1')
 end
 % Parameters for collocation
 N = 75; % Number of elements
