@@ -43,10 +43,10 @@ if b(1) ~= 3 || b(2) ~= 1
 end
 
 %Check input variable type
-if ~isa(state_i(1),'numeric') || ~isa(state_i(2),'numeric') || ~isa(state_i(3),'numeric')
+if CheckInputNumeric(state_i)
     error('HandIn6:InputVariableType','state_i elements must be numbers.')
 end
-if ~isa(state_f(1),'numeric') || ~isa(state_f(2),'numeric') || ~isa(state_f(3),'numeric')
+if CheckInputNumeric(state_f)
     error('HandIn6:InputVariableType','state_f elements must be numbers.')
 end
 
@@ -141,3 +141,8 @@ plot(linspace(0,ds, length(u_opt)),u_opt)
 ylabel('Input')
 xaxis(0,ds)
 yaxis(-1.1, 1.1)
+
+%%
+function [out] = CheckInputNumeric(in)
+   out = ~isa(in(1),'numeric') || ~isa(in(2),'numeric') || ~isa(in(3),'numeric');
+end
