@@ -32,13 +32,8 @@ state_f = [1.2 1.7 -pi/2]';
 %Input constraint
 u_max = 1; %u_min = -u_max
 
-%Check input size
-assert(~CheckInputSize(state_i)), 'HandIn6:InputSize','state_i must be a matrix of size 3x1');
-assert(~CheckInputSize(state_f)), 'HandIn6:InputSize','state_f must be a matrix of size 3x1');
-
-%Check input variable type
-assert(~CheckInputNumeric(state_i),'HandIn6:InputVariableType','state_i elements must be numbers.');
-assert(~CheckInputNumeric(state_f),'HandIn6:InputVariableType','state_f elements must be numbers.');
+%Check input
+CheckInput(state_i, state_f);
 
 % Parameters for collocation
 N = 75; % Number of elements
@@ -133,6 +128,16 @@ xaxis(0,ds)
 yaxis(-1.1, 1.1)
 
 %%
+function [] = CheckInput(state_i, state_f)
+%Check input size
+assert(~CheckInputSize(state_i), 'HandIn6:InputSize','state_i must be a matrix of size 3x1');
+assert(~CheckInputSize(state_f), 'HandIn6:InputSize','state_f must be a matrix of size 3x1');
+
+%Check input variable type
+assert(~CheckInputNumeric(state_i),'HandIn6:InputVariableType','state_i elements must be numbers.');
+assert(~CheckInputNumeric(state_f),'HandIn6:InputVariableType','state_f elements must be numbers.');
+end
+
 function [out] = CheckInputSize(in)
    a = size(in);
    out = a(1) ~= 3 || a(2) ~= 1;
