@@ -133,10 +133,8 @@ plot(pos_x_opt,pos_y_opt, 'LineWidth',2)
 xaxis(min(state_i(1),state_f(1))-2.0, max(state_i(1),state_f(1))+2.0) 
 yaxis(min(state_i(2),state_f(2))-2.0, max(state_i(2),state_f(2))+2.0)
 
-%Check solution
-if(abs(pathCosts - T_opt))< 0.01
-    fprintf("Both implementations show same results\n")
-end
+% Check solution
+assert((abs(pathCosts - T_opt)) >= 0.01, 'Each of the 2 implementations show a different result')
 %%
 figure()
 plot(linspace(0,ds, length(u_opt)),u_opt)
