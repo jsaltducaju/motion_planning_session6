@@ -33,10 +33,8 @@ state_f = [1.2 1.7 -pi/2]';
 u_max = 1; %u_min = -u_max
 
 %Check input size
-a = size(state_i);
-b = size(state_f);
-assert(~(a(1) ~= 3 || a(2) ~= 1), 'HandIn6:InputSize','state_i must be a matrix of size 3x1');
-assert(~(b(1) ~= 3 || b(2) ~= 1), 'HandIn6:InputSize','state_f must be a matrix of size 3x1');
+assert(~CheckInputSize(state_i)), 'HandIn6:InputSize','state_i must be a matrix of size 3x1');
+assert(~CheckInputSize(state_f)), 'HandIn6:InputSize','state_f must be a matrix of size 3x1');
 
 %Check input variable type
 assert(~CheckInputNumeric(state_i),'HandIn6:InputVariableType','state_i elements must be numbers.');
@@ -135,6 +133,11 @@ xaxis(0,ds)
 yaxis(-1.1, 1.1)
 
 %%
+function [out] = CheckInputSize(in)
+   a = size(in);
+   out = a(1) ~= 3 || a(2) ~= 1;
+end
+
 function [out] = CheckInputNumeric(in)
    out = ~isa(in(1),'numeric') || ~isa(in(2),'numeric') || ~isa(in(3),'numeric');
 end
