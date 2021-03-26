@@ -39,12 +39,8 @@ assert(~(a(1) ~= 3 || a(2) ~= 1), 'HandIn6:InputSize','state_i must be a matrix 
 assert(~(b(1) ~= 3 || b(2) ~= 1), 'HandIn6:InputSize','state_f must be a matrix of size 3x1');
 
 %Check input variable type
-if CheckInputNumeric(state_i)
-    error('HandIn6:InputVariableType','state_i elements must be numbers.')
-end
-if CheckInputNumeric(state_f)
-    error('HandIn6:InputVariableType','state_f elements must be numbers.')
-end
+assert(~CheckInputNumeric(state_i),'HandIn6:InputVariableType','state_i elements must be numbers.');
+assert(~CheckInputNumeric(state_f),'HandIn6:InputVariableType','state_f elements must be numbers.');
 
 % Parameters for collocation
 N = 75; % Number of elements
