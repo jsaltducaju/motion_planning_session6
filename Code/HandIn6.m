@@ -40,6 +40,9 @@ N = 75; % Number of elements
 nx = 3; % Degree of state vector
 Nc = 3; % Degree of interpolation polynomials
 
+%Check Collocation parameters
+CheckCollocationParameters(N, nx, Nc);
+
 % Formulate the optimization problem for minimum path length using CasADi
 addpath('casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
@@ -145,4 +148,16 @@ end
 
 function [out] = CheckInputNumeric(in)
    out = ~isa(in(1),'numeric') || ~isa(in(2),'numeric') || ~isa(in(3),'numeric');
+end
+
+
+function [] = CheckCollocationParameters(N, nx, Nc)
+%Check Collocation parametes variable type
+assert(~CheckParameterNumeric(N),'HandIn6:ParameterVariableType','N must be numeric.');
+assert(~CheckParameterNumeric(nx),'HandIn6:ParameterVariableType','nx must be numeric.');
+assert(~CheckParameterNumeric(Nc),'HandIn6:ParameterVariableType','Nc must be numeric.');
+end
+
+function [out] = CheckParameterNumeric(in)
+   out = ~isa(in,'numeric');
 end
