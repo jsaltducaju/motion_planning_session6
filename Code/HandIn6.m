@@ -156,8 +156,16 @@ function [] = CheckCollocationParameters(N, nx, Nc)
 assert(~CheckParameterNumeric(N),'HandIn6:ParameterVariableType','N must be numeric.');
 assert(~CheckParameterNumeric(nx),'HandIn6:ParameterVariableType','nx must be numeric.');
 assert(~CheckParameterNumeric(Nc),'HandIn6:ParameterVariableType','Nc must be numeric.');
+%Check Collocation parametes are positive integers
+assert(~CheckPositiveInteger(N),'HandIn6:ParameterPositiveInteger','N must be a positive integer.');
+assert(~CheckPositiveInteger(nx),'HandIn6:ParameterPositiveInteger','nx must be a positive integer.');
+assert(~CheckPositiveInteger(Nc),'HandIn6:ParameterPositiveInteger','Nc must be a positive integer.');
 end
 
 function [out] = CheckParameterNumeric(in)
    out = ~isa(in,'numeric');
+end
+
+function [out] = CheckPositiveInteger(in)
+   out = ~((rem(in,1) == 0) & (in > 0)); 
 end
